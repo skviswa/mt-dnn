@@ -1,12 +1,17 @@
-from experiments.glue.glue_label_map import TaskType, DATA_TYPE, GLOBAL_MAP, TASK_TYPE, DATA_META, METRIC_META, SAN_META
+from experiments.glue.glue_label_map import (
+    TaskType,
+    DATA_TYPE,
+    GLOBAL_MAP,
+    TASK_TYPE,
+    DATA_META,
+    METRIC_META,
+    SAN_META,
+)
 from data_utils.task_def import DataFormat
 from data_utils.metrics import Metric
 
 task_def_dic = {}
-dropout_p_map = {
-    "mnli": 0.3,
-    "cola": 0.05
-}
+dropout_p_map = {"mnli": 0.3, "cola": 0.05}
 for task in TASK_TYPE.keys():
     task_type = TASK_TYPE[task]
     if task == "qnnli":
@@ -34,7 +39,13 @@ for task in TASK_TYPE.keys():
 
     split_names = None
     if task == "mnli":
-        split_names = ["train", "matched_dev", "mismatched_dev", "matched_test", "mismatched_test"]
+        split_names = [
+            "train",
+            "matched_dev",
+            "mismatched_dev",
+            "matched_test",
+            "mismatched_test",
+        ]
 
     dropout_p = dropout_p_map.get(task, None)
 
@@ -42,12 +53,13 @@ for task in TASK_TYPE.keys():
     metric_meta = tuple(Metric(metric_no).name for metric_no in METRIC_META[task])
     enable_san = bool(SAN_META[task])
 
-    task_def = {"task_type": task_type.name,
-                "data_format": data_format.name,
-                "n_class": n_class,
-                "metric_meta": metric_meta,
-                "enable_san": enable_san
-                }
+    task_def = {
+        "task_type": task_type.name,
+        "data_format": data_format.name,
+        "n_class": n_class,
+        "metric_meta": metric_meta,
+        "enable_san": enable_san,
+    }
     if labels is not None:
         task_def["labels"] = labels
     if split_names is not None:

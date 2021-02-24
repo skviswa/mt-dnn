@@ -6,6 +6,7 @@ from data_utils.task_def import TaskType
 import torch
 from tqdm import tqdm
 
+
 def extract_encoding(model, data, use_cuda=True):
     if use_cuda:
         model.cuda()
@@ -16,16 +17,27 @@ def extract_encoding(model, data, use_cuda=True):
         sequence_output = model.encode(batch_info, batch_data)
         sequence_outputs.append(sequence_output)
         max_seq_len = max(max_seq_len, sequence_output.shape[1])
-    
+
     new_sequence_outputs = []
     for sequence_output in sequence_outputs:
-        new_sequence_output = torch.zeros(sequence_output.shape[0], max_seq_len, sequence_output.shape[2])
-        new_sequence_output[:, :sequence_output.shape[1], :] = sequence_output
+        new_sequence_output = torch.zeros(
+            sequence_output.shape[0], max_seq_len, sequence_output.shape[2]
+        )
+        new_sequence_output[:, : sequence_output.shape[1], :] = sequence_output
         new_sequence_outputs.append(new_sequence_output)
 
     return torch.cat(new_sequence_outputs)
 
-def eval_model(model, data, metric_meta, device, with_label=True, label_mapper=None, task_type=TaskType.Classification):
+
+def eval_model(
+    model,
+    data,
+    metric_meta,
+    device,
+    with_label=True,
+    label_mapper=None,
+    task_type=TaskType.Classification,
+):
     predictions = []
     golds = []
     scores = []
@@ -37,10 +49,11 @@ def eval_model(model, data, metric_meta, device, with_label=True, label_mapper=N
         predictions.extend(pred)
         golds.extend(gold)
         scores.extend(score)
-        ids.extend(batch_info['uids'])
+        ids.extend(batch_info["uids"])
 
     if task_type == TaskType.Span:
         from experiments.squad import squad_utils
+
         golds = squad_utils.merge_answers(ids, golds)
         predictions, scores = squad_utils.select_answers(ids, predictions, scores)
     if with_label:

@@ -16,3 +16,4 @@ apex
 fairseq==0.8.0
 seqeval==0.0.12
 transformers==4.2.2
+black

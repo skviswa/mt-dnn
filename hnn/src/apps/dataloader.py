@@ -1,13 +1,16 @@
 import random
 import torch
 import torch.multiprocessing as multiprocessing
-from torch._C import _set_worker_signal_handlers, \
-    _remove_worker_pids, _error_if_any_worker_fails
+from torch._C import (
+    _set_worker_signal_handlers,
+    _remove_worker_pids,
+    _error_if_any_worker_fails,
+)
 
 from packaging import version
 
-if version.Version(torch.__version__) >= version.Version('1.0.0'):
-    from torch._C import  _set_worker_pids
+if version.Version(torch.__version__) >= version.Version("1.0.0"):
+    from torch._C import _set_worker_pids
 else:
     from torch._C import _update_worker_pids as _set_worker_pids
 
@@ -55,7 +58,7 @@ if IS_WINDOWS:
         def __init__(self):
             self.manager_pid = os.getppid()
 
-            self.kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+            self.kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
             self.kernel32.OpenProcess.argtypes = (DWORD, BOOL, DWORD)
             self.kernel32.OpenProcess.restype = HANDLE
             self.kernel32.WaitForSingleObject.argtypes = (HANDLE, DWORD)
@@ -63,7 +66,9 @@ if IS_WINDOWS:
 
             # Value obtained from https://msdn.microsoft.com/en-us/library/ms684880.aspx
             SYNCHRONIZE = 0x00100000
-            self.manager_handle = self.kernel32.OpenProcess(SYNCHRONIZE, 0, self.manager_pid)
+            self.manager_handle = self.kernel32.OpenProcess(
+                SYNCHRONIZE, 0, self.manager_pid
+            )
 
             if not self.manager_handle:
                 raise ctypes.WinError(ctypes.get_last_error())
@@ -71,7 +76,10 @@ if IS_WINDOWS:
         def is_alive(self):
             # Value obtained from https://msdn.microsoft.com/en-us/library/windows/desktop/ms687032.aspx
             return self.kernel32.WaitForSingleObject(self.manager_handle, 0) != 0
+
+
 else:
+
     class ManagerWatchdog(object):
         def __init__(self):
             self.manager_pid = os.getppid()
@@ -142,15 +150,16 @@ def _worker_manager_loop(in_queue, out_queue, done_event, pin_memory, device_id)
         else:
             out_queue.put((idx, batch))
 
+
 numpy_type_map = {
-    'float64': torch.DoubleTensor,
-    'float32': torch.FloatTensor,
-    'float16': torch.HalfTensor,
-    'int64': torch.LongTensor,
-    'int32': torch.IntTensor,
-    'int16': torch.ShortTensor,
-    'int8': torch.CharTensor,
-    'uint8': torch.ByteTensor,
+    "float64": torch.DoubleTensor,
+    "float32": torch.FloatTensor,
+    "float16": torch.HalfTensor,
+    "int64": torch.LongTensor,
+    "int32": torch.IntTensor,
+    "int16": torch.ShortTensor,
+    "int8": torch.CharTensor,
+    "uint8": torch.ByteTensor,
 }
 
 
@@ -168,17 +177,20 @@ def default_collate(batch):
             storage = batch[0].storage()._new_shared(numel)
             out = batch[0].new(storage)
         return torch.stack(batch, 0, out=out)
-    elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
-            and elem_type.__name__ != 'string_':
+    elif (
+        elem_type.__module__ == "numpy"
+        and elem_type.__name__ != "str_"
+        and elem_type.__name__ != "string_"
+    ):
         elem = batch[0]
-        if elem_type.__name__ == 'ndarray':
+        if elem_type.__name__ == "ndarray":
             # array of string classes and object
-            if re.search('[SaUO]', elem.dtype.str) is not None:
+            if re.search("[SaUO]", elem.dtype.str) is not None:
                 raise TypeError(error_msg.format(elem.dtype))
 
             return torch.stack([torch.from_numpy(b) for b in batch], 0)
         if elem.shape == ():  # scalars
-            py_type = float if elem.dtype.name.startswith('float') else int
+            py_type = float if elem.dtype.name.startswith("float") else int
             return numpy_type_map[elem.dtype.name](list(map(py_type, batch)))
     elif isinstance(batch[0], int_classes):
         return torch.LongTensor(batch)
@@ -215,7 +227,7 @@ handler needs to be set for all DataLoaders in a process."""
 
 def _set_SIGCHLD_handler():
     # Windows doesn't support SIGCHLD handler
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return
     # can't set signal in child threads
     if not isinstance(threading.current_thread(), threading._MainThread):
@@ -254,7 +266,9 @@ class _SequentialDataLoaderIter(object):
 
         if self.num_workers > 0:
             self.worker_init_fn = loader.worker_init_fn
-            self.index_queues = [multiprocessing.Queue() for _ in range(self.num_workers)]
+            self.index_queues = [
+                multiprocessing.Queue() for _ in range(self.num_workers)
+            ]
             self.worker_queue_idx = 0
             self.worker_result_queue = multiprocessing.SimpleQueue()
             self.batches_outstanding = 0
@@ -267,9 +281,17 @@ class _SequentialDataLoaderIter(object):
             self.workers = [
                 multiprocessing.Process(
                     target=_worker_loop,
-                    args=(self.dataset, self.index_queues[i],
-                          self.worker_result_queue, self.collate_fn, self.worker_init_fn, i))
-                for i in range(self.num_workers)]
+                    args=(
+                        self.dataset,
+                        self.index_queues[i],
+                        self.worker_result_queue,
+                        self.collate_fn,
+                        self.worker_init_fn,
+                        i,
+                    ),
+                )
+                for i in range(self.num_workers)
+            ]
 
             if self.pin_memory or self.timeout > 0:
                 self.data_queue = queue.Queue()
@@ -280,8 +302,14 @@ class _SequentialDataLoaderIter(object):
                     maybe_device_id = None
                 self.worker_manager_thread = threading.Thread(
                     target=_worker_manager_loop,
-                    args=(self.worker_result_queue, self.data_queue, self.done_event, self.pin_memory,
-                          maybe_device_id))
+                    args=(
+                        self.worker_result_queue,
+                        self.data_queue,
+                        self.done_event,
+                        self.pin_memory,
+                        maybe_device_id,
+                    ),
+                )
                 self.worker_manager_thread.daemon = True
                 self.worker_manager_thread.start()
             else:
@@ -307,7 +335,9 @@ class _SequentialDataLoaderIter(object):
             try:
                 return self.data_queue.get(timeout=self.timeout)
             except queue.Empty:
-                raise RuntimeError('DataLoader timed out after {} seconds'.format(self.timeout))
+                raise RuntimeError(
+                    "DataLoader timed out after {} seconds".format(self.timeout)
+                )
         else:
             return self.data_queue.get()
 
@@ -329,7 +359,7 @@ class _SequentialDataLoaderIter(object):
             raise StopIteration
 
         while True:
-            assert (not self.shutdown and self.batches_outstanding > 0)
+            assert not self.shutdown and self.batches_outstanding > 0
             idx, batch = self._get_batch()
             self.batches_outstanding -= 1
             if idx != self.rcvd_idx:
@@ -406,7 +436,7 @@ class SequentialDataLoader(object):
     r"""
     Sequential Data loader. Combines a dataset and a sampler, and provides
     single- or multi-process iterators over the dataset.
-    This is modified from Pytorch.DataLoader by disable random state touch as for sequential data loading, 
+    This is modified from Pytorch.DataLoader by disable random state touch as for sequential data loading,
     we don't want it to touch any random state.
     Arguments:
         dataset (Dataset): dataset from which to load the data.
@@ -451,9 +481,20 @@ class SequentialDataLoader(object):
 
     __initialized = False
 
-    def __init__(self, dataset, batch_size=1, shuffle=False, sampler=None, batch_sampler=None,
-                 num_workers=0, collate_fn=default_collate, pin_memory=False, drop_last=False,
-                 timeout=0, worker_init_fn=None):
+    def __init__(
+        self,
+        dataset,
+        batch_size=1,
+        shuffle=False,
+        sampler=None,
+        batch_sampler=None,
+        num_workers=0,
+        collate_fn=default_collate,
+        pin_memory=False,
+        drop_last=False,
+        timeout=0,
+        worker_init_fn=None,
+    ):
         self.dataset = dataset
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -464,23 +505,26 @@ class SequentialDataLoader(object):
         self.worker_init_fn = worker_init_fn
 
         if timeout < 0:
-            raise ValueError('timeout option should be non-negative')
+            raise ValueError("timeout option should be non-negative")
 
         if batch_sampler is not None:
             if batch_size > 1 or shuffle or sampler is not None or drop_last:
-                raise ValueError('batch_sampler option is mutually exclusive '
-                                 'with batch_size, shuffle, sampler, and '
-                                 'drop_last')
+                raise ValueError(
+                    "batch_sampler option is mutually exclusive "
+                    "with batch_size, shuffle, sampler, and "
+                    "drop_last"
+                )
             self.batch_size = None
             self.drop_last = None
 
         if sampler is not None and shuffle:
-            raise ValueError('sampler option is mutually exclusive with '
-                             'shuffle')
+            raise ValueError("sampler option is mutually exclusive with " "shuffle")
 
         if self.num_workers < 0:
-            raise ValueError('num_workers option cannot be negative; '
-                             'use num_workers=0 to disable multiprocessing.')
+            raise ValueError(
+                "num_workers option cannot be negative; "
+                "use num_workers=0 to disable multiprocessing."
+            )
 
         if batch_sampler is None:
             if sampler is None:
@@ -495,9 +539,11 @@ class SequentialDataLoader(object):
         self.__initialized = True
 
     def __setattr__(self, attr, val):
-        if self.__initialized and attr in ('batch_size', 'sampler', 'drop_last'):
-            raise ValueError('{} attribute should not be set after {} is '
-                             'initialized'.format(attr, self.__class__.__name__))
+        if self.__initialized and attr in ("batch_size", "sampler", "drop_last"):
+            raise ValueError(
+                "{} attribute should not be set after {} is "
+                "initialized".format(attr, self.__class__.__name__)
+            )
 
         super(SequentialDataLoader, self).__setattr__(attr, val)
 
@@ -507,32 +553,37 @@ class SequentialDataLoader(object):
     def __len__(self):
         return len(self.batch_sampler)
 
-from queue import Queue,Empty
+
+from queue import Queue, Empty
 from threading import Thread
+
+
 class AsyncDataLoader(object):
-  def __init__(self, dataloader, buffer_size=100):
-    self.buffer_size = buffer_size
-    self.dataloader = dataloader
+    def __init__(self, dataloader, buffer_size=100):
+        self.buffer_size = buffer_size
+        self.dataloader = dataloader
 
-  def __iter__(self):
-    queue = Queue(self.buffer_size)
-    dl=iter(self.dataloader)
-    def _worker():
-      while True:
-        try:
-          queue.put(next(dl))
-        except StopIteration:
-          break
-      queue.put(None)
-    t=Thread(target=_worker)
-    t.start()
-    while True:
-      d = queue.get()
-      if d is None:
-        break
-      yield d
-    del t
-    del queue
+    def __iter__(self):
+        queue = Queue(self.buffer_size)
+        dl = iter(self.dataloader)
 
-  def __len__(self):
-    return len(self.dataloader)
+        def _worker():
+            while True:
+                try:
+                    queue.put(next(dl))
+                except StopIteration:
+                    break
+            queue.put(None)
+
+        t = Thread(target=_worker)
+        t.start()
+        while True:
+            d = queue.get()
+            if d is None:
+                break
+            yield d
+        del t
+        del queue
+
+    def __len__(self):
+        return len(self.dataloader)
