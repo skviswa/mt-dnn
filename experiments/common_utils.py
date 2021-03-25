@@ -18,16 +18,18 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
             if data_format == DataFormat.PremiseOnly:
                 for col in ["uid", "label", "premise"]:
                     if "\t" in str(row[col]):
-                        import pdb
-
-                        pdb.set_trace()
+                        # import pdb
+                        import re
+                        row[col] = re.sub(r"[\n\t]*", "", row[col])
+                        # pdb.set_trace()
                 out_f.write("%s\t%s\t%s\n" % (row["uid"], row["label"], row["premise"]))
             elif data_format == DataFormat.PremiseAndOneHypothesis:
                 for col in ["uid", "label", "premise", "hypothesis"]:
                     if "\t" in str(row[col]):
-                        import pdb
-
-                        pdb.set_trace()
+                        # import pdb
+                        import re
+                        row[col] = re.sub(r"[\n\t]*", "", row[col])
+                        # pdb.set_trace()
                 if extra_features:
                     features_cols = ["uid", "label", "premise", "hypothesis"] + extra_features
                     features = tuple([row[col] for col in features_cols])
@@ -41,15 +43,17 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
             elif data_format == DataFormat.PremiseAndMultiHypothesis:
                 for col in ["uid", "label", "premise"]:
                     if "\t" in str(row[col]):
-                        import pdb
-
-                        pdb.set_trace()
+                        # import pdb
+                        import re
+                        row[col] = re.sub(r"[\n\t]*", "", row[col])
+                        # pdb.set_trace()
                 hypothesis = row["hypothesis"]
                 for one_hypo in hypothesis:
                     if "\t" in str(one_hypo):
-                        import pdb
-
-                        pdb.set_trace()
+                        # import pdb
+                        import re
+                        row[col] = re.sub(r"[\n\t]*", "", row[col])
+                        # pdb.set_trace()
                 hypothesis = "\t".join(hypothesis)
                 out_f.write(
                     "%s\t%s\t%s\t%s\t%s\n"
@@ -64,9 +68,10 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
             elif data_format == DataFormat.Seqence:
                 for col in ["uid", "label", "premise"]:
                     if "\t" in str(row[col]):
-                        import pdb
-
-                        pdb.set_trace()
+                        # import pdb
+                        import re
+                        row[col] = re.sub(r"[\n\t]*", "", row[col])
+                        # pdb.set_trace()
                 out_f.write("%s\t%s\t%s\n" % (row["uid"], row["label"], row["premise"]))
             else:
                 raise ValueError(data_format)

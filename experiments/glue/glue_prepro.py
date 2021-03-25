@@ -22,7 +22,7 @@ def parse_args():
     glue_dataset_choice = glue_datasets+dataset_choices
     mediqa_dataset_choice = mediqa_datasets+dataset_choices
     parser = argparse.ArgumentParser(
-        description="Preprocessing GLUE/SNLI/SciTail dataset."
+        description="Preprocessing GLUE/SNLI/SciTail/MEDIQA dataset."
     )
     parser.add_argument("--seed", type=int, default=13)
     parser.add_argument("--root_dir", type=str, default="data")
