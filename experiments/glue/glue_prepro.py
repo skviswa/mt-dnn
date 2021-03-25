@@ -9,6 +9,8 @@ from data_utils.task_def import DataFormat
 from data_utils.log_wrapper import create_logger
 from experiments.glue.glue_utils import *
 from experiments.glue.mediqa_utils import load_mediqa, load_mednli, load_medquad, load_rqe, test_mode
+from experiments.glue.glue_label_map import GLOBAL_MAP
+from experiments.glue.mediqa_utils import shuffle_rqe
 
 logger = create_logger(__name__, to_disk=True, log_file="glue_prepro.log")
 
@@ -433,6 +435,54 @@ def main(args):
     dump_rows(stsb_dev_data, stsb_dev_fout, DataFormat.PremiseAndOneHypothesis)
     dump_rows(stsb_test_data, stsb_test_fout, DataFormat.PremiseAndOneHypothesis)
     logger.info("done with stsb")
+
+    # # BUILD mednli
+    mednli_train_fout = os.path.join(canonical_data_root, "mednli_train.tsv")
+    mednli_dev_fout = os.path.join(canonical_data_root, "mednli_dev.tsv")
+    mednli_test_fout = os.path.join(canonical_data_root, "mednli_test.tsv")
+    dump_rows(mednli_train_data, mednli_train_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(mednli_dev_data, mednli_dev_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(mednli_test_data, mednli_test_fout, DataFormat.PremiseAndOneHypothesis)
+    logger.info("done with mednli")
+
+    # BUILD rqe
+    rqe_train_fout = os.path.join(canonical_data_root, "rqe_train.tsv")
+    rqe_dev_fout = os.path.join(canonical_data_root, "rqe_dev.tsv")
+    rqe_test_fout = os.path.join(canonical_data_root, "rqe_test.tsv")
+    dump_rows(rqe_train_data, rqe_train_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(rqe_dev_data, rqe_dev_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(rqe_test_data, rqe_test_fout, DataFormat.PremiseAndOneHypothesis)
+    logger.info("done with rqe")
+
+    rqe_shuff_train_fout = os.path.join(canonical_data_root, "rqe_shuff_train.tsv")
+    rqe_shuff_dev_fout = os.path.join(canonical_data_root, "rqe_shuff_dev.tsv")
+    rqe_shuff_test_fout = os.path.join(canonical_data_root, "rqe_shuff_test.tsv")
+    dump_rows(rqe_shuff_train_data, rqe_shuff_train_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(rqe_shuff_dev_data, rqe_shuff_dev_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(rqe_shuff_test_data, rqe_shuff_test_fout, DataFormat.PremiseAndOneHypothesis)
+    logger.info("done with rqe_shuff")
+
+    extra_features = ["score", "rank"]
+    mediqa_train_fout = os.path.join(canonical_data_root, "mediqa_train.tsv")
+    mediqa_dev_fout = os.path.join(canonical_data_root, "mediqa_dev.tsv")
+    mediqa_test_fout = os.path.join(canonical_data_root, "mediqa_test.tsv")
+    dump_rows(mediqa_train_data, mediqa_train_fout, DataFormat.PremiseAndOneHypothesis, extra_features=extra_features)
+    dump_rows(mediqa_dev_data, mediqa_dev_fout, DataFormat.PremiseAndOneHypothesis, extra_features=extra_features)
+    dump_rows(mediqa_test_data, mediqa_test_fout, DataFormat.PremiseAndOneHypothesis, extra_features=extra_features)
+    for sidx, (train_data, dev_data) in enumerate(mediqa_split_data):
+        mediqa_train_fout = os.path.join(
+            canonical_data_root, "mediqa_{}_train.tsv".format(sidx)
+        )
+        mediqa_dev_fout = os.path.join(canonical_data_root, "mediqa_{}_dev.tsv".format(sidx))
+        dump_rows(train_data, mediqa_train_fout, DataFormat.PremiseAndOneHypothesis, extra_features=extra_features)
+        dump_rows(dev_data, mediqa_dev_fout, DataFormat.PremiseAndOneHypothesis, extra_features=extra_features)
+    logger.info("done with mediqa")
+
+    medquad_train_fout = os.path.join(canonical_data_root, "medquad_train.tsv")
+    medquad_dev_fout = os.path.join(canonical_data_root, "medquad_dev.tsv")
+    dump_rows(medquad_train_data, medquad_train_fout, DataFormat.PremiseAndOneHypothesis)
+    dump_rows(medquad_dev_data, medquad_dev_fout, DataFormat.PremiseAndOneHypothesis)
+    logger.info("done with medquad")
 
 
 if __name__ == "__main__":

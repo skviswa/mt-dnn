@@ -3,7 +3,7 @@
 from data_utils import DataFormat
 
 
-def dump_rows(rows, out_path, data_format):
+def dump_rows(rows, out_path, data_format, extra_features=[]):
     """
     output files should have following format
     :param rows:
@@ -28,10 +28,16 @@ def dump_rows(rows, out_path, data_format):
                         import pdb
 
                         pdb.set_trace()
-                out_f.write(
-                    "%s\t%s\t%s\t%s\n"
-                    % (row["uid"], row["label"], row["premise"], row["hypothesis"])
-                )
+                if extra_features:
+                    features_cols = ["uid", "label", "premise", "hypothesis"] + extra_features
+                    features = tuple([row[col] for col in features_cols])
+                    format_str = ''.join(["%s\t"]*(len(features)-1))+"%s\n"
+                    out_f.write(format_str % features)
+                else:
+                    out_f.write(
+                        "%s\t%s\t%s\t%s\n"
+                        % (row["uid"], row["label"], row["premise"], row["hypothesis"])
+                    )
             elif data_format == DataFormat.PremiseAndMultiHypothesis:
                 for col in ["uid", "label", "premise"]:
                     if "\t" in str(row[col]):

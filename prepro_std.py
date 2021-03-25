@@ -87,7 +87,7 @@ def build_data(
                 writer.write("{}\n".format(json.dumps(features)))
 
     def build_data_premise_and_one_hypo(
-        data, dump_path, max_seq_len=MAX_SEQ_LEN, tokenizer=None
+        data, dump_path, max_seq_len=MAX_SEQ_LEN, tokenizer=None, extra_features=[]
     ):
         """Build data of sentence pair tasks"""
         with open(dump_path, "w", encoding="utf-8") as writer:
@@ -106,6 +106,8 @@ def build_data(
                     "type_id": type_ids,
                     "attention_mask": input_mask,
                 }
+                for feature_name in extra_features:
+                    features[feature_name] = sample[feature_name]
                 writer.write("{}\n".format(json.dumps(features)))
 
     def build_data_premise_and_multi_hypo(
