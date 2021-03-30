@@ -16,10 +16,16 @@ def load_data(file_path, task_def):
     for line in open(file_path, encoding="utf-8"):
         fields = line.strip("\n").split("\t")
         if data_format == DataFormat.PremiseOnly:
-            assert len(fields) == 3
+            try:
+                assert len(fields) == 3
+            except AssertionError:
+                continue
             row = {"uid": fields[0], "label": fields[1], "premise": fields[2]}
         elif data_format == DataFormat.PremiseAndOneHypothesis:
-            assert len(fields) == 4
+            try:
+                assert len(fields) == 4
+            except AssertionError:
+                continue
             row = {
                 "uid": fields[0],
                 "label": fields[1],
@@ -27,7 +33,10 @@ def load_data(file_path, task_def):
                 "hypothesis": fields[3],
             }
         elif data_format == DataFormat.PremiseAndMultiHypothesis:
-            assert len(fields) > 5
+            try:
+                assert len(fields) > 5
+            except AssertionError:
+                continue
             row = {
                 "uid": fields[0],
                 "ruid": fields[1].split(","),

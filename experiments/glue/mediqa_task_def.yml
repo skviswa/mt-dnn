@@ -30,13 +30,13 @@ mediqa:
   data_format: PremiseAndOneHypothesis
   enable_san: false
   metric_meta:
-    - ACC
-    - F1
-  loss: CeCriterion
+    - Pearson
+    - Spearman
+  loss: MseCriterion
   kd_loss: MseCriterion
-  adv_loss: SymKlCriterion
+  adv_loss: MseCriterion
   n_class: 1
-  task_type: Ranking
+  task_type: Regression
 medquad:
   data_format: PremiseAndOneHypothesis
   enable_san: false

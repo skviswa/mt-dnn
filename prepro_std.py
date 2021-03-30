@@ -108,7 +108,8 @@ def build_data(
                     "attention_mask": input_mask,
                 }
                 for feature_name in extra_features:
-                    features[feature_name] = sample[feature_name]
+                    if feature_name in features.keys():
+                        features[feature_name] = sample[feature_name]
                 writer.write("{}\n".format(json.dumps(features)))
 
     def build_data_premise_and_multi_hypo(
