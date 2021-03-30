@@ -64,6 +64,7 @@ def build_data(
     lab_dict=None,
     do_padding=False,
     truncation=True,
+    extra_features=[]
 ):
     def build_data_premise_only(
         data, dump_path, max_seq_len=MAX_SEQ_LEN, tokenizer=None
@@ -250,7 +251,7 @@ def build_data(
     if data_format == DataFormat.PremiseOnly:
         build_data_premise_only(data, dump_path, max_seq_len, tokenizer)
     elif data_format == DataFormat.PremiseAndOneHypothesis:
-        build_data_premise_and_one_hypo(data, dump_path, max_seq_len, tokenizer)
+        build_data_premise_and_one_hypo(data, dump_path, max_seq_len, tokenizer, extra_features=extra_features)
     elif data_format == DataFormat.PremiseAndMultiHypothesis:
         build_data_premise_and_multi_hypo(data, dump_path, max_seq_len, tokenizer)
     elif data_format == DataFormat.Seqence:
@@ -263,7 +264,7 @@ def build_data(
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Preprocessing GLUE/SNLI/SciTail dataset."
+        description="Preprocessing GLUE/SNLI/SciTail/MEDIQA dataset."
     )
     parser.add_argument(
         "--model",
@@ -294,6 +295,9 @@ def main(args):
         os.makedirs(mt_dnn_root)
 
     task_defs = TaskDefs(args.task_def)
+    extra_features = []
+    if 'mediqa' in args.task_def:
+        extra_features = ['score', 'rank']
 
     for task in task_defs.get_task_names():
         task_def = task_defs.get_task_def(task)
@@ -301,7 +305,7 @@ def main(args):
         for split_name in task_def.split_names:
             file_path = os.path.join(root, "%s_%s.tsv" % (task, split_name))
             if not os.path.exists(file_path):
-                logger.warning("File %s doesnot exit")
+                logger.warning("File %s does not exit")
                 sys.exit(1)
             rows = load_data(file_path, task_def)
             dump_path = os.path.join(mt_dnn_root, "%s_%s.json" % (task, split_name))
@@ -312,6 +316,7 @@ def main(args):
                 tokenizer,
                 task_def.data_type,
                 lab_dict=task_def.label_vocab,
+                extra_features=extra_features
             )
 
 

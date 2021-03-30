@@ -18,21 +18,40 @@ glue_datasets = ['cola', 'mnli', 'mrpc', 'qnli', 'qqp', 'rte', 'scitail', 'snli'
 mediqa_datasets = ['mednli', 'rqe', 'mediqa', 'medquad']
 dataset_choices = ['all', 'none']
 
+
+def generate_gt_csv(data, dump_path):  # now only use for first 2 tasks of MEDIQA
+    header = "pair_id,label"
+    with open(dump_path, "w") as writer:
+        writer.write("{}\n".format(header))
+        for sample in data:
+            uid, label = sample["uid"], sample["label"]
+            if "task3_qa" not in dump_path:
+                writer.write("{},{}\n".format(uid, label))
+            else:
+                qid, aid = uid.split("____")
+                writer.write("{},{},{}\n".format(qid, aid, label))
+
+
 def parse_args():
-    glue_dataset_choice = glue_datasets+dataset_choices
-    mediqa_dataset_choice = mediqa_datasets+dataset_choices
+    glue_dataset_choice = glue_datasets + dataset_choices
+    mediqa_dataset_choice = mediqa_datasets + dataset_choices
     parser = argparse.ArgumentParser(
         description="Preprocessing GLUE/SNLI/SciTail/MEDIQA dataset."
     )
     parser.add_argument("--seed", type=int, default=13)
     parser.add_argument("--root_dir", type=str, default="data")
+    parser.add_argument("--mediqa_gt_dir", type=str, default="mediqa")
     parser.add_argument(
         "--old_glue",
         action="store_true",
         help="whether it is old GLUE, refer official GLUE webpage for details",
     )
-    parser.add_argument('--glue_dataset', choices=glue_dataset_choice, type=str.lower, help="Choose which dataset you want to preprocess from GLUE. Currently supporting only all or none")
-    parser.add_argument('--mediqa_dataset', choices=mediqa_dataset_choice, type=str.lower, help="Choose which dataset you want to preprocess from MEDIQA. Currently supporting only all or none")
+    parser.add_argument('--glue_dataset', choices=glue_dataset_choice, type=str.lower,
+                        help="Choose which dataset you want to preprocess from GLUE. Currently supporting only all or none")
+    parser.add_argument('--mediqa_dataset', choices=mediqa_dataset_choice, type=str.lower,
+                        help="Choose which dataset you want to preprocess from MEDIQA. Currently supporting only all or none")
+    parser.add_argument('--other_dataset', choices=mediqa_dataset_choice, type=str.lower,
+                        help="Choose which dataset you want to preprocess from SciTail and SNLI. Currently supporting only all or none")
     args = parser.parse_args()
     return args
 
@@ -40,6 +59,7 @@ def parse_args():
 def main(args):
     is_old_glue = args.old_glue
     root = args.root_dir
+    mediqa_gt_dir = args.mediqa_gt_dir
     assert os.path.exists(root)
 
     train_name = "dev" if test_mode else "train"
@@ -55,7 +75,7 @@ def main(args):
     elif args.glue_dataset == 'none':
         glue_dataset_flag = 0
     else:
-        print("Currently supporting only all/none options! Please consider running again with either choice!")
+        print("Currently supporting only all/none options for GLUE! Please consider running again with either choice!")
         exit(1)
 
     mediqa_dataset_flag = -1
@@ -64,21 +84,68 @@ def main(args):
     elif args.mediqa_dataset == 'none':
         mediqa_dataset_flag = 0
     else:
-        print("Currently supporting only all/none options! Please consider running again with either choice!")
+        print(
+            "Currently supporting only all/none options for MEDIQA! Please consider running again with either choice!")
         exit(1)
 
-    if glue_dataset_flag:
+    other_dataset_flag = -1
+    if args.other_dataset == 'all':
+        other_dataset_flag = 1
+    elif args.other_dataset == 'none':
+        other_dataset_flag = 0
+    else:
+        print(
+            "Currently supporting only all/none options for SciTail and SNLI! Please consider running again with either choice!")
+        exit(1)
+
+    if other_dataset_flag:
         ######################################
         # SNLI/SciTail Tasks
         ######################################
-        scitail_train_path = os.path.join(root, "SciTail/tsv_format/scitail_1.0_train.tsv")
-        scitail_dev_path = os.path.join(root, "SciTail/tsv_format/scitail_1.0_dev.tsv")
-        scitail_test_path = os.path.join(root, "SciTail/tsv_format/scitail_1.0_test.tsv")
+        scitail_train_path = os.path.join(root, "SciTailV1.1/tsv_format/scitail_1.0_train.tsv")
+        scitail_dev_path = os.path.join(root, "SciTailV1.1/tsv_format/scitail_1.0_dev.tsv")
+        scitail_test_path = os.path.join(root, "SciTailV1.1/tsv_format/scitail_1.0_test.tsv")
 
         snli_train_path = os.path.join(root, "SNLI/train.tsv")
         snli_dev_path = os.path.join(root, "SNLI/dev.tsv")
         snli_test_path = os.path.join(root, "SNLI/test.tsv")
 
+        # Load data
+        scitail_train_data = load_scitail(scitail_train_path)
+        scitail_dev_data = load_scitail(scitail_dev_path)
+        scitail_test_data = load_scitail(scitail_test_path)
+        logger.info("Loaded {} SciTail train samples".format(len(scitail_train_data)))
+        logger.info("Loaded {} SciTail dev samples".format(len(scitail_dev_data)))
+        logger.info("Loaded {} SciTail test samples".format(len(scitail_test_data)))
+
+        snli_train_data = load_snli(snli_train_path)
+        snli_dev_data = load_snli(snli_dev_path)
+        snli_test_data = load_snli(snli_test_path)
+        logger.info("Loaded {} SNLI train samples".format(len(snli_train_data)))
+        logger.info("Loaded {} SNLI dev samples".format(len(snli_dev_data)))
+        logger.info("Loaded {} SNLI test samples".format(len(snli_test_data)))
+
+        # BUILD SciTail
+        scitail_train_fout = os.path.join(canonical_data_root, "scitail_train.tsv")
+        scitail_dev_fout = os.path.join(canonical_data_root, "scitail_dev.tsv")
+        scitail_test_fout = os.path.join(canonical_data_root, "scitail_test.tsv")
+        dump_rows(
+            scitail_train_data, scitail_train_fout, DataFormat.PremiseAndOneHypothesis
+        )
+        dump_rows(scitail_dev_data, scitail_dev_fout, DataFormat.PremiseAndOneHypothesis)
+        dump_rows(scitail_test_data, scitail_test_fout, DataFormat.PremiseAndOneHypothesis)
+        logger.info("done with scitail")
+
+        # BUILD SNLI
+        snli_train_fout = os.path.join(canonical_data_root, "snli_train.tsv")
+        snli_dev_fout = os.path.join(canonical_data_root, "snli_dev.tsv")
+        snli_test_fout = os.path.join(canonical_data_root, "snli_test.tsv")
+        dump_rows(snli_train_data, snli_train_fout, DataFormat.PremiseAndOneHypothesis)
+        dump_rows(snli_dev_data, snli_dev_fout, DataFormat.PremiseAndOneHypothesis)
+        dump_rows(snli_test_data, snli_test_fout, DataFormat.PremiseAndOneHypothesis)
+        logger.info("done with snli")
+
+    if glue_dataset_flag:
         ######################################
         # GLUE tasks
         ######################################
@@ -123,19 +190,6 @@ def main(args):
         ######################################
         # Loading DATA
         ######################################
-        scitail_train_data = load_scitail(scitail_train_path)
-        scitail_dev_data = load_scitail(scitail_dev_path)
-        scitail_test_data = load_scitail(scitail_test_path)
-        logger.info("Loaded {} SciTail train samples".format(len(scitail_train_data)))
-        logger.info("Loaded {} SciTail dev samples".format(len(scitail_dev_data)))
-        logger.info("Loaded {} SciTail test samples".format(len(scitail_test_data)))
-
-        snli_train_data = load_snli(snli_train_path)
-        snli_dev_data = load_snli(snli_dev_path)
-        snli_test_data = load_snli(snli_test_path)
-        logger.info("Loaded {} SNLI train samples".format(len(snli_train_data)))
-        logger.info("Loaded {} SNLI dev samples".format(len(snli_dev_data)))
-        logger.info("Loaded {} SNLI test samples".format(len(snli_test_data)))
 
         multinli_train_data = load_mnli(multi_train_path)
         multinli_matched_dev_data = load_mnli(multi_dev_matched_path)
@@ -227,26 +281,6 @@ def main(args):
         logger.info("Loaded {} STS-B train samples".format(len(stsb_train_data)))
         logger.info("Loaded {} STS-B dev samples".format(len(stsb_dev_data)))
         logger.info("Loaded {} STS-B test samples".format(len(stsb_test_data)))
-
-        # BUILD SciTail
-        scitail_train_fout = os.path.join(canonical_data_root, "scitail_train.tsv")
-        scitail_dev_fout = os.path.join(canonical_data_root, "scitail_dev.tsv")
-        scitail_test_fout = os.path.join(canonical_data_root, "scitail_test.tsv")
-        dump_rows(
-            scitail_train_data, scitail_train_fout, DataFormat.PremiseAndOneHypothesis
-        )
-        dump_rows(scitail_dev_data, scitail_dev_fout, DataFormat.PremiseAndOneHypothesis)
-        dump_rows(scitail_test_data, scitail_test_fout, DataFormat.PremiseAndOneHypothesis)
-        logger.info("done with scitail")
-
-        # BUILD SNLI
-        snli_train_fout = os.path.join(canonical_data_root, "snli_train.tsv")
-        snli_dev_fout = os.path.join(canonical_data_root, "snli_dev.tsv")
-        snli_test_fout = os.path.join(canonical_data_root, "snli_test.tsv")
-        dump_rows(snli_train_data, snli_train_fout, DataFormat.PremiseAndOneHypothesis)
-        dump_rows(snli_dev_data, snli_dev_fout, DataFormat.PremiseAndOneHypothesis)
-        dump_rows(snli_test_data, snli_test_fout, DataFormat.PremiseAndOneHypothesis)
-        logger.info("done with snli")
 
         # BUILD MNLI
         multinli_train_fout = os.path.join(canonical_data_root, "mnli_train.tsv")
@@ -455,13 +489,20 @@ def main(args):
                 )
             )
 
+        mednli_gt_path = os.path.join(mediqa_gt_dir, "mediqa/task1_mednli/gt_dev.csv")
+        generate_gt_csv(mednli_dev_data, mednli_gt_path)
+        rqe_gt_path = os.path.join(mediqa_gt_dir, "mediqa/task2_rqe/gt_dev.csv")
+        generate_gt_csv(rqe_dev_data, rqe_gt_path)
+        mediqa_gt_path = os.path.join(mediqa_gt_dir, "mediqa/task3_qa/gt_dev.csv")
+        generate_gt_csv(mediqa_dev_data, mediqa_gt_path)
+
         add_num = 2
         medquad_train_data, medquad_dev_data = load_medquad(
             medquad_dir, negative_num=add_num
         )
         logger.info("Loaded {} medquad train samples".format(len(medquad_train_data)))
         logger.info("Loaded {} medquad dev samples".format(len(medquad_dev_data)))
-    #############################################################################
+        #############################################################################
 
 
         # # BUILD mednli
