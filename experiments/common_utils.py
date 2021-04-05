@@ -11,13 +11,12 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
     :return:
     """
     with open(out_path, "w", encoding="utf-8") as out_f:
-        row0 = rows[0]
         # data_format = detect_format(row0)
         for row in rows:
             # assert data_format == detect_format(row), row
             if data_format == DataFormat.PremiseOnly:
                 for col in ["uid", "label", "premise"]:
-                    if "\t" in str(row[col]):
+                    if "\t" in str(row[col]) or "\n" in str(row[col]):
                         # import pdb
                         import re
                         row[col] = re.sub(r"[\n\t]*", "", row[col])
@@ -25,7 +24,7 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
                 out_f.write("%s\t%s\t%s\n" % (row["uid"], row["label"], row["premise"]))
             elif data_format == DataFormat.PremiseAndOneHypothesis:
                 for col in ["uid", "label", "premise", "hypothesis"]:
-                    if "\t" in str(row[col]):
+                    if "\t" in str(row[col]) or "\n" in str(row[col]):
                         # import pdb
                         import re
                         row[col] = re.sub(r"[\n\t]*", "", row[col])
@@ -42,7 +41,7 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
                     )
             elif data_format == DataFormat.PremiseAndMultiHypothesis:
                 for col in ["uid", "label", "premise"]:
-                    if "\t" in str(row[col]):
+                    if "\t" in str(row[col]) or "\n" in str(row[col]):
                         # import pdb
                         import re
                         row[col] = re.sub(r"[\n\t]*", "", row[col])
@@ -67,7 +66,7 @@ def dump_rows(rows, out_path, data_format, extra_features=[]):
                 )
             elif data_format == DataFormat.Seqence:
                 for col in ["uid", "label", "premise"]:
-                    if "\t" in str(row[col]):
+                    if "\t" in str(row[col]) or "\n" in str(row[col]):
                         # import pdb
                         import re
                         row[col] = re.sub(r"[\n\t]*", "", row[col])

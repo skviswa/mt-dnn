@@ -17,6 +17,8 @@ import re
 
 test_mode = False
 mediqa_name_list = ["mediqa", "mediqa_url"]
+prem_and_hypo_order = ['uid', 'premise', 'hypothesis', 'label']
+prem_and_hypo_ranking_order = ['uid', 'premise', 'hypothesis', 'label', 'score', 'rank']
 
 
 def load_mednli(file, label_dict):

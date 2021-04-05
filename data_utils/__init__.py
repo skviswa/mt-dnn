@@ -22,16 +22,27 @@ def load_data(file_path, task_def):
                 continue
             row = {"uid": fields[0], "label": fields[1], "premise": fields[2]}
         elif data_format == DataFormat.PremiseAndOneHypothesis:
+            data_len = len(fields)
             try:
-                assert len(fields) == 4
+                assert (data_len == 4 or data_len == 6)
             except AssertionError:
                 continue
-            row = {
-                "uid": fields[0],
-                "label": fields[1],
-                "premise": fields[2],
-                "hypothesis": fields[3],
-            }
+            if data_len == 4:
+                row = {
+                    "uid": fields[0],
+                    "label": fields[1],
+                    "premise": fields[2],
+                    "hypothesis": fields[3],
+                }
+            else:
+                row = {
+                    "uid": fields[0],
+                    "label": fields[1],
+                    "premise": fields[2],
+                    "hypothesis": fields[3],
+                    "score": fields[4],
+                    "rank": fields[5]
+                }
         elif data_format == DataFormat.PremiseAndMultiHypothesis:
             try:
                 assert len(fields) > 5

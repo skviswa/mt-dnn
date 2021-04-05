@@ -6,6 +6,13 @@ rqe:
     - ACC
     - MCC
     - F1
+  split_names:
+    - train
+    - dev
+    - test
+    - shuff_test
+    - shuff_train
+    - shuff_dev
   loss: CeCriterion
   kd_loss: MseCriterion
   adv_loss: SymKlCriterion
@@ -15,10 +22,6 @@ mednli:
   data_format: PremiseAndOneHypothesis
   dropout_p: 0.1
   enable_san: false
-  labels:
-    - contradiction
-    - neutral
-    - entailment
   metric_meta:
     - ACC
   loss: CeCriterion
@@ -29,6 +32,20 @@ mednli:
 mediqa:
   data_format: PremiseAndOneHypothesis
   enable_san: false
+  split_names:
+    - train
+    - dev
+    - test
+    - 0_dev
+    - 0_train
+    - 1_dev
+    - 1_train
+    - 2_dev
+    - 2_train
+    - 3_dev
+    - 3_train
+    - 4_dev
+    - 4_train
   metric_meta:
     - Pearson
     - Spearman
