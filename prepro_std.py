@@ -273,6 +273,12 @@ def parse_args():
         default="bert-base-uncased",
         help="support all BERT and ROBERTA family supported by HuggingFace Transformers",
     )
+    parser.add_argument(
+        "--result_dir",
+        type=str,
+        default="bert-base-uncased",
+        help="directory where we want to save the tokenized result",
+    )
     parser.add_argument("--do_lower_case", action="store_true")
     parser.add_argument("--do_padding", action="store_true")
     parser.add_argument("--root_dir", type=str, default="data/canonical_data")
@@ -289,9 +295,12 @@ def main(args):
     root = args.root_dir
     assert os.path.exists(root)
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    if 'scibert' in args.result_dir or 'bluebert' in args.result_dir or 'biobert' in args.result_dir:
+        tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
 
-    mt_dnn_root = os.path.join(root, args.model)
+    mt_dnn_root = os.path.join(root, args.result_dir)
     if not os.path.isdir(mt_dnn_root):
         os.makedirs(mt_dnn_root)
 
